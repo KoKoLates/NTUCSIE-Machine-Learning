@@ -13,14 +13,18 @@ class Data(object):
     def generator(num: int) -> tuple[np.ndarray, np.ndarray]:
         """data generator"""
         x: np.ndarray = np.random.uniform(-1, 1, num)
-        y: np.ndarray = np.sign(x)
+        y: np.ndarray = np.where(x > 0, 1, -1)
 
         return x, y
 
     @staticmethod
     def noise(y: np.ndarray, tua: float | int) -> None:
-        if not tua:
-            return
+        """ adding the noise with a fixed distribution 
+        to both train data and test (valid) data 
+        @param y: output of target function of data
+        @param tua: noising distribution for the data 
+        """
+        if not tua: return
 
         for idx, value in enumerate(y):
             if random.randint(1, tua * 100) == 1:
@@ -30,25 +34,69 @@ class Data(object):
 class DecisionStump(object):
     def __init__(
         self,
-        train: tuple[np.ndarray, np.ndarray],
-        valid: tuple[np.ndarray, np.ndarray]
+        train: list[tuple[np.ndarray, np.ndarray]],
+        valid: list[tuple[np.ndarray, np.ndarray]]
     ) -> None:
-        self.train: tuple[np.ndarray, np.ndarray] = train
-        self.valid: tuple[np.ndarray, np.ndarray] = valid
+        """ processing the decision stump algorithms on both
+        in-sample and out-of-sample data at the same time """
+        self.train: list = train
+        self.valid: list = valid
 
-        ## process
+        ## processing
+        self.e_i: float = self._fit() # in-sample error
+        self.e_o: float = self._out_of_sample_error() # out-of-sample error
+    
+    def _fit(self) -> float:
+        """ training decision stump with in-sample data 
+        and calculate the in-sample error """
 
-        ## calculate `e_in` and `e_out`
-        self.e_in: float = 1
-        self.e_out: float = 3
+        ## calculate s and theta for hypothesis
+        self.train = sorted(self.train)
 
+        theta_list: list = [-1]
+        previous_x: float = 0
+        for idx, (x, _) in enumerate(self.train):
+            if not idx: 
+                previous_x = x
+                continue
+
+            if previous_x == x: 
+                continue
+
+            theta_list.append((x + previous_x) / 2)
+            previous_x = x     
+
+        error: float = float("inf")
+        for theta in theta_list:
+            for s in (-1, 1):
+                e: float = sum(1 for x, y in self.train if s * (x - theta) * y < 0)
+                
+                if (e := e / len(self.train)) >= error: continue
+
+                error = e
+                self.s = s
+                self.theta = theta
+
+        return error
+    
+    def _out_of_sample_error(self) -> float:
+        """ based on the hypothesis obtain from in-sample data
+        calculate the out-of-sample error """
+
+        error: float = 0
+        for x, y in self.valid:
+            error += 0 if self.s * (x - self.theta) * y > 0 else 1
+
+        error /= len(self.valid)
+        return error
     
     def result(self) -> tuple:
-        """ calculating the error and return the results
-        @return: triplet of `[E_in, E_out, error]`
+        """ calculating the difference and return the results of decision 
+        stump with in-sample error and out-of-sample error.
+        @return: triplet of `[e_in, e_out, difference]`
         """
-        error: float = self.e_out - self.e_in
-        return self.e_in, self.e_out, error
+        diff: float = self.e_o - self.e_i
+        return (self.e_i, self.e_o, diff)
 
 
 def attribute(fun: Callable) -> Callable:
@@ -85,7 +133,8 @@ def problem(params: tuple[float, int]) -> None:
         Data.noise(y_valid, tua)
 
         decision_stump = DecisionStump(
-            (x_train, y_train), (x_valid, y_valid)    
+            list(zip(x_train, y_train)), 
+            list(zip(x_valid, y_valid))    
         )
 
         _, _, error = decision_stump.result()
