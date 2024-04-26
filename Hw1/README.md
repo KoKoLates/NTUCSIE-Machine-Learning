@@ -1,5 +1,9 @@
 # Hw1: Perceptron Learning Algorithm
 `perceptron` 、 `bad data` 、 `hoeffding's inequality`
+## Assignment
+* [homework 01](./hw1.pdf)
+* [homework report](./hw1_report.pdf)
+
 ## Usage
 running with help flag `-h` for execuation instruction.
 ```
@@ -17,7 +21,3 @@ Running problem 18 for example:
 ```
 python hw1.py -f data/train.dat -q 18
 ```
-
-## Assignment
-* [homework](./hw1.pdf)
-* [report](./hw1_report.pdf)
