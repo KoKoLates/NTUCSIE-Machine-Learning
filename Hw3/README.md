@@ -3,7 +3,7 @@
 
 ## Assignments
 * [homework 3](./hw3.pdf)
-* [homework report]()
+* [homework report](./hw3_report.pdf)
 
 ## Usage
 The programming need train and test data in the specific folder for the models to use. Therefore, make sure that `train.dat` and `test.dat` have been downloaded and move into proper file path with `hw3.py`.
